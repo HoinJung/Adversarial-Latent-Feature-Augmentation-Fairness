@@ -1,11 +1,9 @@
 
 ## Data preprocessing
-
+All the raw data have been prepared.    
+Run
 ```
-python preprocessing/adult_data_processing.py
-python preprocessing/compas_data_processing.py
-python preprocessing/german_data_processing.py
-python preprocessing/drug__data_processing.py
+sh data_prep.sh
 ```
 
 ## Run Code
