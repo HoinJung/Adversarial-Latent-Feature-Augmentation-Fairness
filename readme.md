@@ -12,7 +12,9 @@ python=3.10.9
 torch=2.0.1
   ```
 ### Clone Repository
-```git clone https://github.com/hin1115/Adversarial-Latent-Feature-Augmentation-Fairness.git```
+```
+git clone https://github.com/hin1115/Adversarial-Latent-Feature-Augmentation-Fairness.git
+```
 
 ## Run code
 For a fair comparison, ALFA runs 10 times and present the mean and standard deviation for each evaluation metric.
