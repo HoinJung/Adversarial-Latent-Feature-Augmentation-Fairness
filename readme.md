@@ -3,6 +3,7 @@
 ALFA aims to produce a augmented feature on the latent space by fairness attack. Fine-tuning on the augmented feature rotate the decision boundary recover the unfair region, where the false positive rate and false negative rate are disproportionately high.
 
 ## Install
+### Requirements
   ```
 cuda=11.6.1
 numpy=1.23.5
@@ -10,7 +11,8 @@ pandas=1.5.3
 python=3.10.9
 torch=2.0.1
   ```
-	```git clone ff```
+### Clone Repository
+```git clone https://github.com/hin1115/Adversarial-Latent-Feature-Augmentation-Fairness.git```
 
 ## Run code
 For a fair comparison, ALFA runs 10 times and present the mean and standard deviation for each evaluation metric.
