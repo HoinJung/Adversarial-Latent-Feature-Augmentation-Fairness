@@ -1,29 +1,66 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import typing as ty
+from torch.autograd import Function
+from warnings import warn
+import torch.nn.init as nn_init
+from torch.jit import script
+from torch import Tensor
 
 class MLP(nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size,out_dim):
         super(MLP, self).__init__()
         self.fc1 = nn.Linear(input_size, 128)
         self.fc2 = nn.Linear(128, 128)
-        self.fc3 = nn.Linear(128, 1)
+        self.classifier = nn.Linear(128, out_dim)
 
     def forward(self, x):
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
+        h = F.relu(x)
+        outputs = self.classifier(h)
+        return torch.sigmoid(outputs)
+
+class MLP_encoder(nn.Module):
+    def __init__(self, input_size):
+        super(MLP_encoder, self).__init__()
+        self.fc1 = nn.Linear(input_size, 128)
+        self.fc2 = nn.Linear(128, 128)
+        
+
+    def forward(self, x):
+        x = self.fc1(x)
         x = F.relu(x)
-        x = self.fc3(x)
-        return torch.sigmoid(x)
+        x = self.fc2(x)
+        h = F.relu(x)
+        return h
+    
+class Linear(nn.Module):
+    def __init__(self, input_size,out_dim=1):
+        super(Linear, self).__init__()
+        self.classifier = nn.Linear(input_size, out_dim)
+    def forward(self, h):
+        outputs = self.classifier(h)
+        return torch.sigmoid(outputs)
+    
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+        self.fc = nn.Linear(1,1) ## dummy
+    def forward(self, x):
+        return x
+
 
 class LogisticRegression(torch.nn.Module):
-     def __init__(self, input_size, output_dim=1):
-         super(LogisticRegression, self).__init__()
-         self.linear = torch.nn.Linear(input_size, output_dim)
+     def __init__(self, input_size, out_dim=1):
+        super(LogisticRegression, self).__init__()
+        self.classifier = torch.nn.Linear(input_size, out_dim)
      def forward(self, x):
-         outputs = torch.sigmoid(self.linear(x))
-         return outputs
+        outputs = self.classifier(x)
+        return torch.sigmoid(outputs)
+
 
 class Perturbation(nn.Module):
     def __init__(self, input_size, epsilon):
@@ -41,7 +78,7 @@ class Perturbation(nn.Module):
 
         x = x + self.W.weight       
         
-        return x 
+        return x , self.W.weight
 
 
 class SinkhornDistance(nn.Module):
@@ -60,15 +97,15 @@ class SinkhornDistance(nn.Module):
         - Input: :math:`(N, P_1, D_1)`, :math:`(N, P_2, D_2)`
         - Output: :math:`(N)` or :math:`()`, depending on `reduction`
     """
-    def __init__(self, eps, max_iter, dataset, reduction='none'):
+    def __init__(self, eps, max_iter, reduction='none'):
         super(SinkhornDistance, self).__init__()
         self.eps = eps
         self.max_iter = max_iter
         self.reduction = reduction
-        self.dataset = dataset
+
     def forward(self, x, y):
         # The Sinkhorn algorithm takes as input three variables :
-        C = self._cost_matrix(x, y, self.dataset).cuda()  # Wasserstein cost function
+        C = self._cost_matrix(x, y).cuda()  # Wasserstein cost function
         x_points = x.shape[-2]
         y_points = y.shape[-2]
 
@@ -122,7 +159,7 @@ class SinkhornDistance(nn.Module):
         return (-C + u.unsqueeze(-1) + v.unsqueeze(-2)) / self.eps
 
     @staticmethod
-    def _cost_matrix(x, y,dataset ,p=2):
+    def _cost_matrix(x, y ,p=2):
         "Returns the matrix of $|x_i-y_j|^p$."
         x_col = x.unsqueeze(-2)
         y_lin = y.unsqueeze(-3)
@@ -136,3 +173,4 @@ class SinkhornDistance(nn.Module):
         "Barycenter subroutine, used by kinetic acceleration through extrapolation."
         return tau * u + (1 - tau) * u1
         
+

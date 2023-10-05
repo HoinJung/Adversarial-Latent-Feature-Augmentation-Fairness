@@ -1,4 +1,0 @@
-python preprocessing/adult_data_processing.py
-python preprocessing/compas_data_processing.py
-python preprocessing/drug_data_processing.py
-python preprocessing/german_data_processing.py

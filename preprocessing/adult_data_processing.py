@@ -3,14 +3,14 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import os
 import argparse
+import copy
 
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--fake', default=False, type=bool)
-    parser.add_argument('--fake_num', default=1, type=int)
+    
     args = parser.parse_args()
     data_directory = 'preprocessing/adult/'
     print("===============================================")
@@ -39,22 +39,31 @@ if __name__ == '__main__':
 
     label = df.pop('y')
     data = pd.concat([df, label], 1)
-    group_label = data['sex_ Male'].to_numpy()
+
+
+    shuffeld=copy.deepcopy(data)
+    shuffeld = shuffeld.sample(frac=1,random_state=0).reset_index(drop=True)
+    group_label = shuffeld['sex_ Male'].to_numpy()
     print(f'group_label shape: {group_label.shape}\n')
     print(f'group_label: {group_label}\n')
 
-    X_unordered = data.iloc[:, :-1].values
+    X_unordered = shuffeld.iloc[:, :-1].values
     sensitive_feature = X_unordered[:,-2] # (gender)
     X = np.hstack((sensitive_feature[..., np.newaxis], X_unordered[:,:-2], X_unordered[:,-1:]))
-    Y = data.iloc[:, -1].values
+    Y = shuffeld.iloc[:, -1].values
 
+    # Standardize suffled column-wise
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
     print(f'Shape of the datapoints:           {X_scaled.shape}')
     print(f'Shape of the corresponding labels: {Y.shape}\n')
 
-    idx = round(0.85*len(X_scaled))
+    
+    idx = round(0.8*len(X_scaled))
+    
+
+    ## online validationf
     X_train = X_scaled[:idx]
     X_test = X_scaled[idx:]
     X_val = X_train[:len(X_test)]
@@ -70,8 +79,7 @@ if __name__ == '__main__':
     print(f'Y_train shape: {Y_train.shape}\n')
     print(f'Y_val shape: {Y_val.shape}\n')
     print(f'Y_test shape:  {Y_test.shape}\n')
-
-    # Create output folder if it doesn't exist
+# Create output folder if it doesn't exist
     if not os.path.exists('dataset'):
         os.makedirs('dataset')
     # Make a .npz file for the training and test datasets
@@ -81,3 +89,4 @@ if __name__ == '__main__':
 
 
     print("===============================================")
+

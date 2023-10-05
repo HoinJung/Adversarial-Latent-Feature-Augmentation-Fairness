@@ -1,25 +1,20 @@
-# Attack-based Data Augmentation for Fairness
-## Data preprocessing
-All the raw data have been prepared.    
-Run
-```
-sh data_prep.sh
-```
+
 
 ## Run Code
 ```
-python main.py --model {MODEL_NAME} --dataset {DATASET} --base --compare --attack --lamb1 {LAMBDA_1} --lamb2 {LAMBDA_2} --lamb3 {LAMBDA_3} --attack_iter {ATTACK_ITER} 
+python main.py --model {MODEL_NAME} --dataset {DATASET} --base  --latent --alpha {ALPHA} --lam {LAMBDA} --epsilon {EPSILON}
 ```
 - MODEL_NAME: ```mlp```, ```logistic```
 - DATASET:```adult```,```compas```,```german```, ```drug```
-- LAMBDA1, LAMBDA2, LAMBDA3: float numbers to weigh each loss term
+- LAMBDA, ALPHA : float numbers , ```ALPHA={0,0.1,1,10,100}```,  ```LAMBDA=[0,1]```
+- EPSILON : perturbation range
 - ATTACK_ITER: the number of iteration for attacking step
-- ```--base```: creating a pretrained model which is necessary for adversarial data augmentation. Once the pretrained model is obtained, you can drop the commad ```--base```.
-- ```--compare```: to compare the performance with the baseline. If you don't want to check the performance of baseline, drop the command ```--compare```.
-- ```--attack```: necessary to execute the attack-based data augmentation for fairness.
+- ```--base```: creating a pretrained model which is necessary for adversarial latent feature augmentation. Once the pretrained model is obtained, you can drop the commad ```--base```.
+- ```--latent```: necessary to execute the attack-based data augmentation for fairness.
 
 
 ex)
 ```
-python main.py --model logistic --dataset german --base --compare --attack --lamb1 1 --lamb2 10 --lamb3 10 --attack_iter 1000
+python main.py --model logistic --dataset compas --latent --alpha 10 --lam 0.25 --attack_iter 100 --epochs 10 --epsilon 0.5 --base
+python main.py --model mlp --dataset drug  --latent --alpha 1 --lam 0.75 --attack_iter 100 --epochs 100 --epsilon 0.5 --base
 ```

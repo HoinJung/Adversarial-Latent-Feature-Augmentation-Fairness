@@ -9,8 +9,7 @@ import argparse
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--fake', default=False, type=bool)
-    parser.add_argument('--fake_num', default=1, type=int)
+    
     args = parser.parse_args()
 
 
@@ -19,20 +18,17 @@ if __name__ == '__main__':
 
     # Load .csv file    
     path = 'preprocessing/german/german_final.csv'
-    data = pd.read_csv(path, header=None)
+    origin_data = pd.read_csv(path, header=None)
     dataset = 'german'
-    if args.fake :
-        fake_data = pd.read_csv(f'preprocessing/german/fake_german_{args.fake_num}.csv', header=0)  
-        fake_data.columns = [int(s) for s in fake_data.columns]
-        data = pd.concat([data,fake_data],axis=0)
 
+    data = origin_data.sample(frac=1,random_state=0).reset_index(drop=True)
     # Map categorical/qualitative attributes to numerical ones (One-hot Encoding)
     attributes_to_encode = [0,2,3,5,6,9,11,13,14,16,18,19]
     data = pd.get_dummies(data, columns=attributes_to_encode)
 
     # Group classes (i.e. [A91, A93, A94] as male (0), [A92, A95] as female (1))
-    data[8] = data[8].map({'A91':0, 'A92':1, 'A93':0, 'A94':0, 'A95':1})
-    # data[8] = data[8].map({'A91':0, 'A92':1, 'A93':0, 'A94':0, 'A95':1,0:0,1:1})
+    # data[8] = data[8].map({'A91':0, 'A92':1, 'A93':0, 'A94':0, 'A95':1})
+    data[8] = data[8].map({'A91':0, 'A92':1, 'A93':0, 'A94':0, 'A95':1,0:0,1:1})
 
     # To increase readibility, map a good risk value (1) to 0 and a bad risk value (2) to 1
     data[20] = data[20].map({1: 0, 2:1})
@@ -54,16 +50,15 @@ if __name__ == '__main__':
     X = np.hstack((sensitive_feature[..., np.newaxis], X_unordered[:,:3], X_unordered[:,4:]))
     Y = data.iloc[:, -1].values
 
-    # Standardize
+    # Standardize suffled column-wise
     scaler = sk.StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
     print(f'Shape of the datapoints:           {X_scaled.shape}')
     print(f'Shape of the corresponding labels: {Y.shape}\n')
 
-    # Split 70/15/15
     
-    idx = round(0.85*len(X_scaled))
+    idx = round(0.8*len(X_scaled))
     X_train = X_scaled[:idx]
     X_test = X_scaled[idx:]
     X_val = X_train[:len(X_test)]
@@ -72,14 +67,13 @@ if __name__ == '__main__':
     Y_test = Y[idx:]
     Y_val = Y_train[:len(X_test)]
     Y_train = Y_train[len(X_test):]
-    
+
     print(f'X_train shape: {X_train.shape}\n')
     print(f'X_val shape: {X_val.shape}\n')
     print(f'X_test shape:  {X_test.shape}\n')
     print(f'Y_train shape: {Y_train.shape}\n')
     print(f'Y_val shape: {Y_val.shape}\n')
     print(f'Y_test shape:  {Y_test.shape}\n')
-
 
     # Create output folder if it doesn't exist
     if not os.path.exists('dataset'):
