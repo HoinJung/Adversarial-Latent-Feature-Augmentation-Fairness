@@ -8,23 +8,10 @@ import torch.nn.init as nn_init
 from torch.jit import script
 from torch import Tensor
 
-class MLP(nn.Module):
-    def __init__(self, input_size,out_dim):
-        super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.classifier = nn.Linear(128, out_dim)
 
-    def forward(self, x):
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
-        h = F.relu(x)
-        outputs = self.classifier(h)
-        return torch.sigmoid(outputs)
 
 class MLP_encoder(nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size,out_dim):
         super(MLP_encoder, self).__init__()
         self.fc1 = nn.Linear(input_size, 128)
         self.fc2 = nn.Linear(128, 128)
@@ -38,17 +25,18 @@ class MLP_encoder(nn.Module):
         return h
     
 class Linear(nn.Module):
-    def __init__(self, input_size,out_dim=1):
+    def __init__(self, input_size,out_dim):
         super(Linear, self).__init__()
         self.classifier = nn.Linear(input_size, out_dim)
     def forward(self, h):
         outputs = self.classifier(h)
+
         return torch.sigmoid(outputs)
-    
+        
 class Identity(nn.Module):
     def __init__(self):
         super(Identity, self).__init__()
-        self.fc = nn.Linear(1,1) ## dummy
+        self.f = nn.Linear(1,1) # dummy
     def forward(self, x):
         return x
 
@@ -58,14 +46,16 @@ class LogisticRegression(torch.nn.Module):
         super(LogisticRegression, self).__init__()
         self.classifier = torch.nn.Linear(input_size, out_dim)
      def forward(self, x):
-        outputs = self.classifier(x)
+        h=x
+        outputs = self.classifier(h)
         return torch.sigmoid(outputs)
 
 
-class Perturbation(nn.Module):
-    def __init__(self, input_size, epsilon):
-        super(Perturbation, self).__init__()
+class Latent_Perturbation(nn.Module):
+    def __init__(self, input_size, epsilon, groups_indices):
+        super(Latent_Perturbation, self).__init__()
         self.epsilon = epsilon
+        self.groups_indices = groups_indices  # List of indices for each group
         self.W = nn.Embedding(input_size[0], input_size[1])
         self._init_weight_()
         
@@ -73,14 +63,18 @@ class Perturbation(nn.Module):
         nn.init.xavier_uniform_(self.W.weight)
     
     def forward(self, x):
+        
         with torch.no_grad():
-            self.W.weight[:] = self.W.weight.clamp(-self.epsilon, self.epsilon)
+            for i, indices in enumerate(self.groups_indices):
+                group_weights = self.W.weight[indices]
+                l2_norm = torch.norm(group_weights.view(group_weights.size(0),-1),dim=1,keepdim=True)
+                normalized_weights = group_weights / torch.clamp(l2_norm / (self.epsilon[i]), min=1)
+                self.W.weight[indices] = normalized_weights
 
         x = x + self.W.weight       
         
         return x , self.W.weight
-
-
+    
 class SinkhornDistance(nn.Module):
     """
     Given two empirical measures each with :math:`P_1` locations
@@ -102,7 +96,7 @@ class SinkhornDistance(nn.Module):
         self.eps = eps
         self.max_iter = max_iter
         self.reduction = reduction
-
+        
     def forward(self, x, y):
         # The Sinkhorn algorithm takes as input three variables :
         C = self._cost_matrix(x, y).cuda()  # Wasserstein cost function
@@ -159,7 +153,7 @@ class SinkhornDistance(nn.Module):
         return (-C + u.unsqueeze(-1) + v.unsqueeze(-2)) / self.eps
 
     @staticmethod
-    def _cost_matrix(x, y ,p=2):
+    def _cost_matrix(x, y,p=2):
         "Returns the matrix of $|x_i-y_j|^p$."
         x_col = x.unsqueeze(-2)
         y_lin = y.unsqueeze(-3)
