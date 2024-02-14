@@ -16,25 +16,29 @@ torch=2.0.1
 git clone https://github.com/hin1115/Adversarial-Latent-Feature-Augmentation-Fairness.git
 ```
 
+## Data preprocessing
+
+```
+python preprocessing/adult_data_processing.py
+python preprocessing/compas_data_processing.py
+python preprocessing/german_data_processing.py
+python preprocessing/drug__data_processing.py
+```
+
 ## Run code
 For a fair comparison, ALFA runs 10 times and present the mean and standard deviation for each evaluation metric.
-```
-python main.py --model {MODEL_NAME} --dataset {DATASET} --base  --latent --alpha {ALPHA} --lam {LAMBDA} --epsilon {EPSILON}
-```
 - MODEL_NAME: ```mlp```, ```logistic```
 - DATASET:```adult```,```compas```,```german```, ```drug```
-- LAMBDA, ALPHA : float numbers , ```ALPHA={0,0.1,1,10,100}```,  ```LAMBDA=[0,1]```
-- EPSILON : perturbation range
+- ALPHA: float numbers to weight the Sinkhorn loss
 - ATTACK_ITER: the number of iteration for attacking step
-- ```--base```: creating a pretrained model which is necessary for adversarial latent feature augmentation. Once the pretrained model is obtained, you can drop the commad ```--base```.
-- ```--latent```: necessary to execute the attack-based data augmentation for fairness.
-
+- ```--base```: creating a pretrained model which is necessary for adversarial data augmentation. Once the pretrained model is obtained, you can drop the commad ```--base```.
+- ```--attack```: necessary to execute the attack-based data augmentation for fairness.
 
 ex)
 ```
-python main.py --model logistic --dataset compas --latent --alpha 10 --lam 0.25 --attack_iter 100 --epochs 10 --epsilon 0.5 --base
-python main.py --model mlp --dataset drug  --latent --alpha 1 --lam 0.75 --attack_iter 100 --epochs 100 --epsilon 0.5 --base
+python main.py --model logistic --dataset compas --alpha 0.1 --attack --attack_iter 10 --num_exp 1 --epochs 50 --base
 ```
+
 ## Test
 After the training, the evaluation will be conducted automatically.
 
