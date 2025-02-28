@@ -13,9 +13,8 @@ torch=2.0.1
   ```
 ### Clone Repository
 ```
-git clone https://github.com/hin1115/Adversarial-Latent-Feature-Augmentation-Fairness.git
+git clone https://github.com/HoinJung/Adversarial-Latent-Feature-Augmentation-Fairness.git
 ```
-
 
 ## Data preprocessing
 
@@ -23,7 +22,7 @@ git clone https://github.com/hin1115/Adversarial-Latent-Feature-Augmentation-Fai
 python preprocessing/adult_data_processing.py
 python preprocessing/compas_data_processing.py
 python preprocessing/german_data_processing.py
-python preprocessing/drug__data_processing.py
+python preprocessing/drug_data_processing.py
 ```
 
 ## Run Code
